@@ -27,7 +27,10 @@ const stats = [
 
 function App() {
   const [randomIdea, setRandomIdea] = useState('Loading...')
+  const [users, setUsers] = useState([])
+  const [posts, setPosts] = useState([])
   const [formData, setFormData] = useState({ name: 'Tester', message: 'Hello backend!' })
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'user' })
   const [responseText, setResponseText] = useState('')
 
   useEffect(() => {
@@ -36,6 +39,55 @@ function App() {
       .then((data) => setRandomIdea(data.idea))
       .catch(() => setRandomIdea('Backend unavailable'))
   }, [])
+
+  const loadUsers = async () => {
+    try {
+      const res = await fetch('/api/users')
+      const data = await res.json()
+      setUsers(data)
+      setResponseText('Users loaded from backend.')
+    } catch (error) {
+      setResponseText('Failed to load users.')
+    }
+  }
+
+  const loadPosts = async () => {
+    try {
+      const res = await fetch('/api/posts')
+      const data = await res.json()
+      setPosts(data)
+      setResponseText('Posts loaded from backend.')
+    } catch (error) {
+      setResponseText('Failed to load posts.')
+    }
+  }
+
+  const handleCreateUser = async (event) => {
+    event.preventDefault()
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setResponseText(data.error || 'User creation failed.')
+        return
+      }
+
+      setResponseText(`User added: ${data.name} (${data.email})`)
+      setNewUser({ name: '', email: '', role: 'user' })
+      loadUsers()
+    } catch (error) {
+      setResponseText('Failed to create user.')
+    }
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -77,7 +129,7 @@ function App() {
             personality to make a prototype feel alive.
           </p>
           <div className="cta-row">
-            <button type="button">Launch idea</button>
+            <button type="button" onClick={() => fetch('/api/random').then((res) => res.json()).then((data) => setRandomIdea(data.idea))}>Launch idea</button>
             <button type="button" className="secondary">View notes</button>
           </div>
         </div>
@@ -121,6 +173,34 @@ function App() {
 
       <section className="test-panel">
         <h3>Backend test</h3>
+        <div className="api-buttons">
+          <button type="button" onClick={loadUsers}>Load Users</button>
+          <button type="button" className="secondary" onClick={loadPosts}>Load Posts</button>
+        </div>
+
+        <form onSubmit={handleCreateUser} className="test-form">
+          <h4>Add user to database</h4>
+          <input
+            type="text"
+            value={newUser.name}
+            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+            placeholder="Name"
+          />
+          <input
+            type="email"
+            value={newUser.email}
+            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+            placeholder="Email"
+          />
+          <input
+            type="text"
+            value={newUser.role}
+            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+            placeholder="Role"
+          />
+          <button type="submit">Add user</button>
+        </form>
+
         <form onSubmit={handleSubmit} className="test-form">
           <input
             type="text"
@@ -135,7 +215,22 @@ function App() {
           />
           <button type="submit">Send to backend</button>
         </form>
+
         {responseText && <p className="response-box">{responseText}</p>}
+
+        {users.length > 0 && (
+          <div className="data-box">
+            <h4>Users</h4>
+            <pre>{JSON.stringify(users, null, 2)}</pre>
+          </div>
+        )}
+
+        {posts.length > 0 && (
+          <div className="data-box">
+            <h4>Posts</h4>
+            <pre>{JSON.stringify(posts, null, 2)}</pre>
+          </div>
+        )}
       </section>
     </main>
   )

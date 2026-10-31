@@ -4,6 +4,7 @@ import { sequelize, User, Post } from './database.js'
 
 const app = express()
 const port = 4000
+const host = process.env.HOST || '0.0.0.0'
 
 app.use(cors())
 app.use(express.json())
@@ -89,8 +90,8 @@ app.post('/api/test', async (req, res) => {
 async function startServer() {
   try {
     await sequelize.sync({ alter: true })
-    app.listen(port, () => {
-      console.log(`Dummy backend running at http://localhost:${port}`)
+    app.listen(port, host, () => {
+      console.log(`Dummy backend running at http://${host}:${port}`)
     })
   } catch (error) {
     console.error('Database sync failed:', error)
